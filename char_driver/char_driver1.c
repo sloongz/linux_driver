@@ -1,7 +1,7 @@
 /*
  * a char kernel module: char_driver
  *
- * Copyright (C) 2018 sloongz
+ * Copyright (C) 2019 sloongz
  *
  * Licensed under GPLv2 or later.
  */
