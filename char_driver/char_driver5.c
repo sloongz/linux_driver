@@ -14,6 +14,8 @@
 #include <linux/slab.h>
 #include <linux/semaphore.h>
 #include <linux/delay.h>
+#include <linux/spinlock.h>
+#include <linux/atomic.h>
 
 //主设备号
 #define X_MAJOR 222
@@ -29,7 +31,11 @@
 #define X_IOR		_IOR(X_MAGIC, 2, char[G_MEM_SIZE])
 #define X_IOW		_IOW(X_MAGIC, 3, char[G_MEM_SIZE])
 
+
+//#define DEBUG_SPIN_LOCK
 #define DEBUG_MUTEX
+//#define DEBUG_SEMA
+//#define DEBUG_COMPL
 
 static int g_major = X_MAJOR;
 module_param(g_major, int, S_IRUGO);
@@ -43,7 +49,14 @@ struct g_dev {
 	int size;
 	char buf[G_MEM_SIZE];
 	struct mutex mutex; //互斥信号量
+	struct semaphore sem_mutex; //信号量用于互斥
+	struct semaphore sem_read; //信号量用于同步
+	struct completion compl; //完成量
+	int f_open_cnt;
+	atomic_t f_open_cnt1; //原子计数
+	spinlock_t lock;
 };
+
 
 struct g_dev *g_devp;
 
@@ -53,6 +66,18 @@ static int x_open(struct inode *inode, struct file *filp)
 
     //私有数据指针， 大多数指向驱动中自定义的设备结构体
 	filp->private_data = dev;
+#ifdef DEBUG_SPIN_LOCK //打开这个宏， 文件只能被打开一次
+	spin_lock(&dev->lock);
+	if (dev->f_open_cnt) { //已经打开
+		printk("file has been open\n");
+		spin_unlock(&dev->lock);
+		return - EBUSY;	
+	}
+	dev->f_open_cnt++;//增加使用计数
+	spin_unlock(&dev->lock);
+#endif
+
+	atomic_inc(&dev->f_open_cnt1);
 
 	printk(KERN_INFO "%s, major:%d minor:%d\n", __func__, 
 				MAJOR(inode->i_rdev), MINOR(inode->i_rdev));
@@ -61,7 +86,18 @@ static int x_open(struct inode *inode, struct file *filp)
 
 static int x_release(struct inode *inode, struct file *filp)
 {
+	struct g_dev *dev = container_of(inode->i_cdev, struct g_dev, cdev);
+
+#ifdef DEBUG_SPIN_LOCK
+	spin_lock(&dev->lock);
+	dev->f_open_cnt--;//减少使用计数
+	spin_unlock(&dev->lock);
+#endif
+
+	atomic_dec(&dev->f_open_cnt1);
+
 	printk(KERN_INFO "%s\n", __func__);
+
 	return 0;
 }
 
@@ -81,7 +117,20 @@ static ssize_t x_read(struct file *filp, char __user *buf, size_t size,
 	//获取打开文件对应的设备
 	struct g_dev *dev = filp->private_data;
 
-	printk(KERN_INFO "%s offset:%ld\n", __func__, p);
+	printk(KERN_INFO "%s offset:%ld, line:%d\n", __func__, p, __LINE__);
+
+#ifdef DEBUG_SEMA
+	//获取不到信号量就睡， 可被中断打断
+	//如果没有写操作， 读就会睡眠等待， 直到有写操作把信号量sem_read +1
+	if(down_interruptible(&dev->sem_read)) { 
+		return -ERESTARTSYS;
+	}
+	printk(KERN_INFO "read func semaphore P\n");
+#endif
+
+#ifdef DEBUG_COMPL
+	wait_for_completion(&dev->compl);//信号不能打断
+#endif
 	
 	//操作位置到文件尾，或超出文件尾了
 	//if (p > G_MEM_SIZE)
@@ -95,15 +144,17 @@ static ssize_t x_read(struct file *filp, char __user *buf, size_t size,
 		cnt = dev->size - p;
 
 	//保护临界区
-	mutex_lock(&dev->mutex);
+	//mutex_lock(&dev->mutex);
+	down(&dev->sem_mutex); //使用down替代mutex_lock
 	if (copy_to_user(buf, dev->buf + p, cnt)) {
 		ret = -EFAULT;	
 	} else {
 		*f_pos += cnt;
 		ret = cnt;
 	}
-	mutex_unlock(&dev->mutex);
-
+	//mutex_unlock(&dev->mutex);
+	up(&dev->sem_mutex);//使用up替代mutex_unlock
+	
 	return ret;
 }
 
@@ -121,7 +172,8 @@ static ssize_t x_write(struct file *filp, const char __user *buf,
 		cnt = G_MEM_SIZE - p;
 
 	//保护临界区
-	mutex_lock(&dev->mutex);
+	//mutex_lock(&dev->mutex);
+	down(&dev->sem_mutex);
 	if (copy_from_user(dev->buf + p, buf, cnt)) {
 		ret = -EFAULT;
 	} else {
@@ -136,10 +188,21 @@ static ssize_t x_write(struct file *filp, const char __user *buf,
 	//测试mutex, 如果用户写入sleep字符串则休眠10秒在解锁
 	if (!strncmp("sleep", buf, 5)) {
 		msleep(1000*10);	
+		printk(KERN_INFO "sleep over\n");
 	}
 #endif
 
-	mutex_unlock(&dev->mutex);
+	//mutex_unlock(&dev->mutex);
+	up(&dev->sem_mutex); //信号量+1
+
+#ifdef DEBUG_SEMA
+	printk(KERN_INFO "write func semaphore V\n");
+	up(&dev->sem_read);
+#endif
+
+#ifdef DEBUG_COMPL
+	complete(&dev->compl);
+#endif
 
 	return ret;
 }
@@ -158,31 +221,39 @@ static long x_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	switch (cmd) {
 	case X_IO_SET:
 		printk(KERN_INFO "%s X_IO_SET\n", __func__);
-		mutex_lock(&dev->mutex);
+		//mutex_lock(&dev->mutex);
+		down(&dev->sem_mutex);
 		memset(dev->buf, 's', G_MEM_SIZE);
-		mutex_unlock(&dev->mutex);
+		//mutex_unlock(&dev->mutex);
+		up(&dev->sem_mutex);
 		break;
 	case X_IO_CLEAR:
 		printk(KERN_INFO "%s X_IO_CLEAR\n", __func__);
-		mutex_lock(&dev->mutex);
+		//mutex_lock(&dev->mutex);
+		down(&dev->sem_mutex);
 		memset(dev->buf, 0, G_MEM_SIZE);
-		mutex_unlock(&dev->mutex);
+		//mutex_unlock(&dev->mutex);
+		up(&dev->sem_mutex);
 		break;
 	case X_IOR:
 		printk(KERN_INFO "%s X_IOR, dev minor:%d\n", __func__, MINOR(dev->cdev.dev));
-		mutex_lock(&dev->mutex);
+		//mutex_lock(&dev->mutex);
+		down(&dev->sem_mutex);
 		if (copy_to_user((char *)arg, dev->buf, G_MEM_SIZE)) {
 			return -EFAULT;
 		}	
-		mutex_unlock(&dev->mutex);
+		//mutex_unlock(&dev->mutex);
+		up(&dev->sem_mutex);
 		break;
 	case X_IOW:
 		printk(KERN_INFO "%s X_IOW\n", __func__);
-		mutex_lock(&dev->mutex);
+		//mutex_lock(&dev->mutex);
+		down(&dev->sem_mutex);
 		if (copy_from_user(dev->buf, (char *)arg, G_MEM_SIZE)) {
 			return -EFAULT;
 		}
-		mutex_unlock(&dev->mutex);
+		//mutex_unlock(&dev->mutex);
+		up(&dev->sem_mutex);
 		printk("app data:%s\n", dev->buf);
 		break;
 	default:
@@ -215,7 +286,7 @@ static loff_t x_llseek(struct file *filp, loff_t offset, int whence)
 		return -EINVAL;
 
 	filp->f_pos = newpos;
-	printk("%s offset:%lld\n", __func__, newpos);
+	printk(KERN_INFO "%s offset:%lld\n", __func__, newpos);
 
 	return newpos;
 }
@@ -289,6 +360,9 @@ static int __init x_init(void)
 		setup_cdev(g_devp + i, i);
 		(g_devp + i)->size = 0;
 		mutex_init(&(g_devp + i)->mutex);
+		sema_init(&(g_devp + i)->sem_mutex, 1); //初始化信号量用于互斥
+		sema_init(&(g_devp + i)->sem_read, 0); //初始化信号量用于同步
+		init_completion(&(g_devp + i)->compl);
 	}
 
 	return 0;
