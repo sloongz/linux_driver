@@ -16,20 +16,24 @@
 #include <linux/delay.h>
 #include <linux/wait.h>
 #include <linux/poll.h>
+#include <linux/mm.h>
+#include <asm/io.h>
 
 //主设备号
 #define X_MAJOR 222
 
+#define G_DEV_ADDRMEM_SIZE PAGE_SIZE
 #define G_MEM_SIZE 1024
 
 #define DEVICE_NUM	5
 
 #define X_MAGIC   'X'
-#define X_MAX_NR  4
+#define X_MAX_NR  5
 #define X_IO_SET	_IO(X_MAGIC, 0)
 #define X_IO_CLEAR	_IO(X_MAGIC, 1)
 #define X_IOR		_IOR(X_MAGIC, 2, char[G_MEM_SIZE])
 #define X_IOW		_IOW(X_MAGIC, 3, char[G_MEM_SIZE])
+#define X_IOR_MAP	_IOR(X_MAGIC, 4, char[G_MEM_SIZE])
 
 static int g_major = X_MAJOR;
 module_param(g_major, int, S_IRUGO);
@@ -45,17 +49,11 @@ struct g_dev {
 	struct mutex mutex; //互斥信号量
 	wait_queue_head_t r_wait; //阻塞读
 	wait_queue_head_t w_wait; //阻塞写
-	struct fasync_struct *async_queue; //异步结构
+	char *buf_dev_address; //用于映射的设备地址空间
 };
 
 struct g_dev *g_devp;
-
-static int x_fasync(int fd, struct file *filp, int mode)
-{
-	struct g_dev *dev = filp->private_data;
-
-	return fasync_helper(fd, filp, mode, &dev->async_queue);
-}
+struct vm_area_struct *g_vma;
 
 static int x_open(struct inode *inode, struct file *filp)
 {
@@ -78,8 +76,6 @@ static int x_open(struct inode *inode, struct file *filp)
 static int x_release(struct inode *inode, struct file *filp)
 {
 	printk(KERN_INFO "%s\n", __func__);
-	//将文件从异步通知列表中删除
-	x_fasync(-1, filp, 0);
 	return 0;
 }
 
@@ -189,10 +185,6 @@ static ssize_t x_write(struct file *filp, const char __user *buf,
 	if (dev->size > 0) {
 		//如果设备缓冲区有数据， 就通知读操作可以读数据
 		wake_up_interruptible(&dev->r_wait);
-		if (dev->async_queue) {
-			//产生异步读信号
-			kill_fasync(&dev->async_queue, SIGIO, POLL_IN);
-		}
 	}
 	return ret;
 }
@@ -228,6 +220,7 @@ static long x_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		printk(KERN_INFO "%s X_IOR, dev minor:%d\n", __func__, MINOR(dev->cdev.dev));
 		mutex_lock(&dev->mutex);
 		if (copy_to_user((char *)arg, dev->buf, G_MEM_SIZE)) {
+			mutex_unlock(&dev->mutex);
 			return -EFAULT;
 		}	
 		mutex_unlock(&dev->mutex);
@@ -239,6 +232,13 @@ static long x_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		dev->size = G_MEM_SIZE - ret;
 		mutex_unlock(&dev->mutex);
 		printk("app data:%s\n", dev->buf);
+		break;
+	case X_IOR_MAP://将映射的内容复制到用户空间
+		printk(KERN_INFO "%s X_IOR_MAP, dev minor:%d\n", __func__, MINOR(dev->cdev.dev));
+		printk(KERN_INFO "ioctl read map: %s\n", (char *)g_vma->vm_start);
+		if (copy_to_user((char *)arg, (char *)g_vma->vm_start, G_MEM_SIZE)) {
+			return -EFAULT;
+		}
 		break;
 	default:
 		return -EINVAL;
@@ -307,6 +307,35 @@ static unsigned int x_poll(struct file *filp, poll_table * wait)
 	return mask;
 }
 
+static int x_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	struct g_dev *dev = filp->private_data;
+	unsigned int vma_size = vma->vm_end - vma->vm_start;
+	unsigned int offset = vma->vm_pgoff << PAGE_SHIFT;
+
+	g_vma = vma;//赋值给全局变量， ioctl中用到
+	//表示对设备IO空间的映射
+	vma->vm_flags |= VM_IO;
+	//标志该内存区不能被换出，在设备驱动中虚拟页和物理页的关系应该是长期的，
+	//应该保留起来，不能随便被别的虚拟页换出
+	vma->vm_flags |= VM_DONTEXPAND | VM_DONTDUMP;
+
+	printk("%s, map size:0x%x\n", __func__, vma_size);
+	if (vma_size + offset > G_DEV_ADDRMEM_SIZE) { //用户空间需要的内存超出了设备内存范围
+		printk(KERN_ERR "mmap overflow\n");
+		return -EAGAIN;
+	} else {
+		//remap_pfn_range 映射内核内存到用户空间
+		if(remap_pfn_range(vma,//虚拟内存区域，即设备地址将要映射到这里
+					vma->vm_start,//虚拟空间的起始地址
+					virt_to_phys(dev->buf_dev_address)>>PAGE_SHIFT,//与物理内存对应的页帧号，物理地址右移12位
+					vma->vm_end - vma->vm_start,//映射区域大小，一般是页大小的整数倍
+					vma->vm_page_prot))//保护属性
+			return -EAGAIN;
+	}
+
+	return 0;
+}
 
 //填充file_operations结构体
 static struct file_operations x_fops = {  
@@ -318,7 +347,7 @@ static struct file_operations x_fops = {
 	.unlocked_ioctl = x_ioctl,
 	.llseek = x_llseek,
 	.poll = x_poll, 
-	.fasync = x_fasync,
+	.mmap = x_mmap,
 }; 
 
 static void setup_cdev(struct g_dev *dev, int index)
@@ -381,6 +410,10 @@ static int __init x_init(void)
 		mutex_init(&(g_devp + i)->mutex);
 		init_waitqueue_head(&(g_devp + i)->r_wait);
 		init_waitqueue_head(&(g_devp + i)->w_wait);
+		(g_devp + i)->buf_dev_address = (char *)kmalloc(G_DEV_ADDRMEM_SIZE, GFP_KERNEL);
+		if (!(g_devp + i)->buf_dev_address) {
+			printk(KERN_ERR "%s %d, kmalloc mem fail\n", __func__, __LINE__);
+		}
 	}
 
 	return 0;
@@ -396,9 +429,10 @@ static void __exit x_exit(void)
 	int i;
 	printk(KERN_INFO "char exit\n");
 	//注销字符设备
-	//unregister_chrdev(g_major,  "char_driver"); 
+	//unregister_chrdev(g_major,  "simple"); 
 	for (i=0; i<DEVICE_NUM; i++) {
 		cdev_del(&(g_devp + i)->cdev);
+		kfree((g_devp+i)->buf_dev_address);
 	}
 	kfree(g_devp);
 	unregister_chrdev_region(MKDEV(g_major, 0), DEVICE_NUM);
