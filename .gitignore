@@ -2,7 +2,6 @@
 *.ko
 *.mod.c
 *.ko.cmd
-simple4.o.ur-safe
 Module.symvers
 modules.order
 modules.order
@@ -10,7 +9,3 @@ modules.order
 *.mod.o.cmd
 .cache.mk
 .tmp_versions
-simple_driver/app/*
-!simple_driver/app/*.c
-!simple_driver/app/Makefile
-.vscode/
