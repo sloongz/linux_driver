@@ -4,7 +4,7 @@ linux driver
 
 char_driver是简单的设备驱动
 
-[char_driver1.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.c) 实现简单的创建字符设备、打开、关闭、读、写。[文档](https://sloongz.github.io/2019/08/25/char%20driver（一）/)。
+[char_driver1.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.c) 实现简单的创建字符设备、打开、关闭、读、写。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.md)。
 
 [char_driver2.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver2.c) 增加insmod模块参数、动态分配主设备号、支持多个子设备。[文档](https://sloongz.github.io/2019/08/25/char%20driver（二）/)。
 
