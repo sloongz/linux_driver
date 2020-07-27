@@ -1,5 +1,4 @@
 linux driver
-笔记放在了[https://sloongz.github.io](https://sloongz.github.io)
 
 [hello module](https://github.com/sloongz/linux_driver/tree/master/hello_module) 写一个简单的内核module
 
