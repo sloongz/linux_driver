@@ -6,17 +6,17 @@ char_driver是简单的设备驱动
 
 [char_driver1.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.c) 实现简单的创建字符设备、打开、关闭、读、写。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.md)。
 
-[char_driver2.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver2.c) 增加insmod模块参数、动态分配主设备号、支持多个子设备。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char%20driver2.md)。
+[char_driver2.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver2.c) 增加insmod模块参数、动态分配主设备号、支持多个子设备。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver2.md)。
 
-[char_driver3.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver3.c) 增加ioctl功能。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char%20driver3.md)。
+[char_driver3.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver3.c) 增加ioctl功能。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver3.md)。
 
-[char_driver4.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver4.c) 增加lseek功能、增加mutex锁， [文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char%20driver4.md)。
+[char_driver4.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver4.c) 增加lseek功能、增加mutex锁， [文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver4.md)。
 
-[char_driver5.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver5.c) 增加spin_lock、semaphore、completion、atomic。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char%20driver5.md)。
+[char_driver5.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver5.c) 增加spin_lock、semaphore、completion、atomic。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver5.md)。
 
-[char_driver6.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver6.c) 在char_driver4.c的基础上增加wait_event。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char%20driver6.md)。
+[char_driver6.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver6.c) 在char_driver4.c的基础上增加wait_event。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver6.md)。
 
-[char_driver7.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver7.c) 在char_driver6.c的基础上增加poll机制。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char%20driver7.md)。
+[char_driver7.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver7.c) 在char_driver6.c的基础上增加poll机制。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver7.md)。
 
 [char_driver8.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver8.c) 在char_driver7.c的基础上增加信号机制。[文档](https://sloongz.github.io/2019/08/25/char%20driver（八）/)。
 
