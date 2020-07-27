@@ -18,9 +18,9 @@ char_driver是简单的设备驱动
 
 [char_driver7.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver7.c) 在char_driver6.c的基础上增加poll机制。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver7.md)。
 
-[char_driver8.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver8.c) 在char_driver7.c的基础上增加信号机制。[文档](https://sloongz.github.io/2019/08/25/char%20driver（八）/)。
+[char_driver8.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver8.c) 在char_driver7.c的基础上增加信号机制。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver8.md)。
 
-[char_driver9.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver9.c) 在char_driver7.c的基础上增加mmap接口。[文档](https://sloongz.github.io/2019/08/25/char%20driver（九）/)。
+[char_driver9.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver9.c) 在char_driver7.c的基础上增加mmap接口。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver9.md)。
 
 [proc.c](https://github.com/sloongz/linux_driver/blob/master/proc/proc.c) proc文件系统。[文档](https://sloongz.github.io/2019/10/10/proc（十）/)。
 
