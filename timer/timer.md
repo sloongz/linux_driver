@@ -1,6 +1,3 @@
----
-title: timer 13
-categories: linux_kernel
 
 - **timer**
 

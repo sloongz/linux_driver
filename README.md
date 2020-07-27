@@ -22,16 +22,16 @@ char_driver是简单的设备驱动
 
 [char_driver9.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver9.c) 在char_driver7.c的基础上增加mmap接口。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver9.md)。
 
-[proc.c](https://github.com/sloongz/linux_driver/blob/master/proc/proc.c) proc文件系统。[文档](https://sloongz.github.io/2019/10/10/proc（十）/)。
+[proc.c](https://github.com/sloongz/linux_driver/blob/master/proc/proc.c) proc文件系统。[文档](https://github.com/sloongz/linux_driver/blob/master/proc/proc.md)。
 
-[sys.c](https://github.com/sloongz/linux_driver/blob/master/sys/sys.c) sys文件系统。[文档](https://sloongz.github.io/2019/10/10/sys（十一）/)。
+[sys.c](https://github.com/sloongz/linux_driver/blob/master/sys/sys.c) sys文件系统。[文档](https://github.com/sloongz/linux_driver/blob/master/sys/sys.md)。
 
-[debugfs.c](https://github.com/sloongz/linux_driver/blob/master/debugfs/debugfs.c) debugfs文件系统。[文档](https://sloongz.github.io/2019/10/10/debugfs（十二）/)。
+[debugfs.c](https://github.com/sloongz/linux_driver/blob/master/debugfs/debugfs.c) debugfs文件系统。[文档](https://github.com/sloongz/linux_driver/blob/master/debugfs/debugfs.md)。
 
-[timer.c](https://github.com/sloongz/linux_driver/blob/master/timer/timer.c) timer定时器。[文档](https://sloongz.github.io/2019/10/10/timer（十三）/)。
+[timer.c](https://github.com/sloongz/linux_driver/blob/master/timer/timer.c) timer定时器。[文档](https://github.com/sloongz/linux_driver/blob/master/timer/timer.md)。
 
-[work_queue.c](https://github.com/sloongz/linux_driver/blob/master/work/work_queue.c) 工作队列。[文档](https://sloongz.github.io/2019/10/10/work_queue（十四）/)。
+[work_queue.c](https://github.com/sloongz/linux_driver/blob/master/work/work_queue.c) 工作队列。[文档](https://github.com/sloongz/linux_driver/blob/master/work/work_queue.md)。
 
-[kthread.c](https://github.com/sloongz/linux_driver/blob/master/kthread/kthread.c) 内核线程。[文档](https://sloongz.github.io/2019/10/21/kthread（十五）/)。
+[kthread.c](https://github.com/sloongz/linux_driver/blob/master/kthread/kthread.c) 内核线程。[文档](https://github.com/sloongz/linux_driver/blob/master/kthread/kthread.md)。
 
-[platform.c](https://github.com/sloongz/linux_driver/blob/master/platform/platform.c) 虚拟设备总线。[文档](https://sloongz.github.io/2019/10/21/platform（十六）/)
+[platform.c](https://github.com/sloongz/linux_driver/blob/master/platform/platform.c) 虚拟设备总线。[文档](https://github.com/sloongz/linux_driver/blob/master/platform/platform.md)
