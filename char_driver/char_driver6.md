@@ -16,7 +16,7 @@
 
 
 进程状态：
-![进程状态](https://github.com/sloongz/Tools/blob/master/image/char_driver6.png?raw=true)
+![进程状态](https://github.com/sloongz/linux_driver/blob/master/Image/char_driver6.png?raw=true)
 
 
 ```
