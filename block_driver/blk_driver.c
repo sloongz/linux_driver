@@ -51,14 +51,14 @@ static void do_mblk_request(struct request_queue *q)
 		}
 
 
-			//buffer = bio_data(req->bio);
-			if (rq_data_dir(req) == READ) {
-				printk("read\n");
-			//	memcpy(buffer, mblk_data + offset, nbytes);
-			} else { //WRITE 
-				printk("write\n");
-			//	memcpy(mblk_data + offset, buffer, nbytes);
-			}
+		buffer = bio_data(req->bio);
+		if (rq_data_dir(req) == READ) {
+			printk("read offset:%lu size:%lu bytes\n", offset, nbytes);
+			memcpy(buffer, mblk_data + offset, nbytes);
+		} else { //WRITE 
+			printk("write offset:%lu size:%lu bytes\n", offset, nbytes);
+			memcpy(mblk_data + offset, buffer, nbytes);
+		}
 
 	done:
 		if (!__blk_end_request_cur(req, err))
@@ -105,7 +105,7 @@ static int __init xblk_init(void)
 	}
 
 	//I/O调度器把排序后的访问需求通过request_queue结构传递给块设备驱动程序处理
-	mblk_queue = blk_init_queue(do_mblk_request, &lock);
+	mblk_queue = blk_init_queue(do_mblk_request, NULL);
 	if (!mblk_queue) {
 		ret = ENOMEM;
 		goto out_queue;
