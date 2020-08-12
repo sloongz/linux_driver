@@ -2,7 +2,7 @@ linux driver
 
 [hello module](https://github.com/sloongz/linux_driver/tree/master/hello_module) 写一个简单的内核module
 
-char_driver是简单的设备驱动
+char_driver是简单的字符设备驱动
 
 [char_driver1.c](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.c) 实现简单的创建字符设备、打开、关闭、读、写。[文档](https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.md)。
 
@@ -35,3 +35,5 @@ char_driver是简单的设备驱动
 [kthread.c](https://github.com/sloongz/linux_driver/blob/master/kthread/kthread.c) 内核线程。[文档](https://github.com/sloongz/linux_driver/blob/master/kthread/kthread.md)。
 
 [platform.c](https://github.com/sloongz/linux_driver/blob/master/platform/platform.c) 虚拟设备总线。[文档](https://github.com/sloongz/linux_driver/blob/master/platform/platform.md)
+
+block_driver 是简单的块驱动
