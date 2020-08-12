@@ -181,6 +181,8 @@ static ssize_t x_write(struct file *filp, const char __user *buf, size_t
 ```
 
 在char_driver7.c的基础上新建char_driver8.c，代码
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver8.c
+
 
 写一个char8_test.c测试程序
 

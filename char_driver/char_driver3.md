@@ -81,6 +81,8 @@ _IOC_READ | _IOC_WRITE  双向数据传输
 #define IOCSIZE_SHIFT	(_IOC_SIZESHIFT)
 ```
 
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver3.c
+
 make 生成char_driver3.ko
 
 写一个用户测试程序，程序调用ioctl完成驱动中定义的4种操作

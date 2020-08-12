@@ -76,7 +76,7 @@ int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
 
 代码：
 修改char_driver7.c 添加mmap函数 char_driver9.c 
-
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver9.c
 
 char9_test.c
 

@@ -4,6 +4,8 @@
 - 动态分配主设备号
 - 支持多个子设备
 
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver2.c
+
 make 生成char_driver2.ko
 
 定义了模块的参数

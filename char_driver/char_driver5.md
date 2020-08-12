@@ -413,6 +413,7 @@ local_irq_enable()
 中断是调度的根源， 关闭中断也就不存在抢夺资源的问题了。
 
 代码
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver5.c
 
 Makefile
 

@@ -46,6 +46,8 @@ sys文件系统 内核中在 show/store
 
 创建了两个sys属性结点，普通文本和二进制的接口， 为了简单程序都写成了字符串了。
 
+https://github.com/sloongz/linux_driver/blob/master/sys/sys.c
+
 测试
 
 ```

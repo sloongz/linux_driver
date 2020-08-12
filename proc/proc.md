@@ -20,6 +20,10 @@ struct proc_dir_entry *proc_create_data(const char *name, umode_t mode,
 
 如果不想管理复杂的内存， 可以使用seq_file管理文件
 
+代码
+
+https://github.com/sloongz/linux_driver/blob/master/proc/proc.c
+
 
 编译 插入 创建结点
 

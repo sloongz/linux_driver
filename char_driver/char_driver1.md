@@ -1,5 +1,7 @@
 写一个简单的字符设备驱动， 然后不停的迭代添加功能来达到学习Linux driver的目的。
 
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver1.c
+
 make生成char_driver1.ko文件
 
 以root权限插入模块

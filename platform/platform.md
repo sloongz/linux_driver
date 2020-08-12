@@ -4,6 +4,8 @@ Linux设备模型是设备、驱动、总线模型，一些不存在实际总线
 
 bus寻址的设备可以套用这个模型。
 
+https://github.com/sloongz/linux_driver/blob/master/platform/platform.c
+
 测试
 
 ```

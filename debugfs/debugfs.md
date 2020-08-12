@@ -3,6 +3,10 @@
 
 debugfs 是一种用于内核调试的虚拟文件系统，内核开发者通过debugfs和用户空间交换数据。
 
+代码
+
+https://github.com/sloongz/linux_driver/blob/master/debugfs/debugfs.c
+
 使用debugfs需要内核打开选项
 
 ```

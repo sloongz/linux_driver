@@ -45,6 +45,7 @@ timer.c代码
 
 在func中再更新timer的时间。
 
+https://github.com/sloongz/linux_driver/blob/master/timer/timer.c
 
 插入驱动， dmesg打印log
 

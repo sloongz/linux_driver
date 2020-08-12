@@ -54,6 +54,7 @@ SCHED_RR 进程优先级rt_priority(1-99)，不同优先级按照优先级高的
 
 写一个kthread的测试程序
 
+https://github.com/sloongz/linux_driver/blob/master/kthread/kthread.c
 
 
 编译 运行

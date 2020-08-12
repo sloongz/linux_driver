@@ -37,6 +37,9 @@ whence 可以是 SEEK_SET（文件指针开始），SEEK_CUR（文件指针当�
 
 互斥锁， 保护临界区
 
+
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver4.c
+
 make 生成char_driver4.ko
 
 以root权限插入char_driver4.ko模块

@@ -77,6 +77,8 @@ wake_up_interruptible()         wait_event_interruptible()
 - 如果设备缓冲区没有数据则读阻塞，直到有数据填入
 - 如果设备缓冲区已经满了则写阻塞，直到有数据被读出
 
+代码
+https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver6.c
 
 ---
 测试

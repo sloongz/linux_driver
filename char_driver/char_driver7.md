@@ -108,6 +108,7 @@ static ssize_t x_write(struct file *filp, const char __user *buf,
  6 应用程序读设备
  
  代码：
+ https://github.com/sloongz/linux_driver/blob/master/char_driver/char_driver7.c
  
  修改char_driver6.c得到char_driver7.c
  
