@@ -306,9 +306,10 @@ void bio_endio(struct bio *bio, int error)
 
 
 
-先写一个简单的block device driver。然后在慢慢完善。
+先写一个简单的block device driver， 使用系统默认的IO调度器。然后在慢慢完善。
 
-代码
+代码：
+
 https://github.com/sloongz/linux_driver/blob/master/block_driver/blk_driver1.c
 
 make 生成ko
@@ -382,6 +383,23 @@ AAA$ ls
 lost+found
 
 ```
+
+查看使用IO调度算法
+
+```
+$ cat /sys/block/mblk_dev/queue/scheduler
+noop deadline [cfq] 
+```
+修改算法
+
+```
+$ sudo sh -c "echo noop > /sys/block/mblk_dev/queue/scheduler"
+$ cat /sys/block/mblk_dev/queue/scheduler 
+[noop] deadline cfq 
+
+```
+
+
 卸载
 
 ```
