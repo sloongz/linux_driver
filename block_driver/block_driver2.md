@@ -2,6 +2,7 @@
 - 增加fops的getgeo 函数
 - 修改处理request的函数
 - 增加分区数
+- 模拟硬盘的内存从数组改为vmalloc申请
 
 ##### getgeo 描述了磁头、扇区、柱面等信息。
 
@@ -139,3 +140,5 @@ Filesystem      Size  Used Avail Use% Mounted on
 /dev/mblk_dev2   12M  116K   11M   2% /home/sean/github/linux_driver/block_driver/BBB
 ```
 
+##### vmalloc
+存开机线性映射了3G-896M的低端内存， 如果是32位机器寻址4G空间， 剩下的128M为高端内存， vmalloc可以在这128M内存上申请虚拟地址连续但是物理地址不连续的内存， 申请过程可能引起睡眠。
