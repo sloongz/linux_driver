@@ -369,16 +369,12 @@ Filesystem      Size  Used Avail Use% Mounted on
 在目录下创建文件删除文件
 
 ```
-AAA$ sudo touch 1
-AAA$ sudo chmod 777 1
-AAA$ sudo echo xxxx > 1
-AAA$ ls -l
-total 13
--rwxrwxrwx 1 root root     5 Aug 12 20:31 1
-drwx------ 2 root root 12288 Aug 12 20:24 lost+found
-AAA$ cat 1
+AAA$ sudo sh -c 'echo xxxx > 1.txt'
+AAA$ ls
+1.txt  lost+found
+AAA$ cat 1.txt 
 xxxx
-AAA$ sudo rm 1 
+AAA$ sudo rm 1.txt 
 AAA$ ls
 lost+found
 
