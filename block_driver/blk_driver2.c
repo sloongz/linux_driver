@@ -16,6 +16,7 @@
 #define X_MAJOR 222
 #define DEVICE_NAME "mblk_dev"
 #define MBLK_BYTES (16*1024*1024) //16M	
+#define MAX_DEV_CNT	3
 
 struct mdisk_dev {
 	struct gendisk *mblk_gendisk;
@@ -124,7 +125,7 @@ static int __init xblk_init(void)
 		goto err_vmem;
 	}
 
-	g_blkdev->mblk_gendisk = alloc_disk(1);
+	g_blkdev->mblk_gendisk = alloc_disk(MAX_DEV_CNT);
 	if (!g_blkdev->mblk_gendisk) {
 		ret = -ENOMEM;
 		goto out_disk;
