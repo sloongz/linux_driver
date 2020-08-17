@@ -1,5 +1,6 @@
 obj-m := blk_driver1.o \
-		 blk_driver2.o
+		 blk_driver2.o \
+		 blk_driver3.o
 KERNEL_DIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)
 all:
