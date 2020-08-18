@@ -36,7 +36,7 @@ char_driver是简单的字符设备驱动
 
 [platform.c](https://github.com/sloongz/linux_driver/blob/master/platform/platform.c) 虚拟设备总线。[文档](https://github.com/sloongz/linux_driver/blob/master/platform/platform.md)
 
-[misc](https://github.com/sloongz/linux_driver/blob/master/misc/platform.c) misc 设备驱动。[文档](https://github.com/sloongz/linux_driver/blob/master/misc/misc.md)
+[misc.c](https://github.com/sloongz/linux_driver/blob/master/misc/platform.c) misc 设备驱动。[文档](https://github.com/sloongz/linux_driver/blob/master/misc/misc.md)
 
 block_driver 是简单的块驱动
 
