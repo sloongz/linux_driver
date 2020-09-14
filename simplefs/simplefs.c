@@ -10,6 +10,9 @@
 #include <linux/module.h>
 #include <linux/fs.h>
 #include <linux/time.h>
+#include <linux/buffer_head.h>
+
+#include "simplefs.h"
 
 struct inode *simplefs_get_inode(struct super_block *sb,
 			const struct inode *dir, umode_t mode, dev_t dev)
@@ -26,7 +29,7 @@ struct inode *simplefs_get_inode(struct super_block *sb,
 			break;
 		case S_IFDIR:
 			printk(KERN_INFO "S_IFDIR:0x%x\n", S_IFDIR);
-			//inc_nlink(inode);
+			inc_nlink(inode);
 			break;
 		case S_IFREG:
 			printk(KERN_INFO "S_IFREG:0x%x\n", S_IFREG);
@@ -45,15 +48,57 @@ struct inode *simplefs_get_inode(struct super_block *sb,
 	return inode;
 }
 
+static ssize_t simplefs_read(struct file * filp, char __user * buf, size_t len, loff_t * ppos)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
+
+static const struct file_operations simplefs_dir_operations = {
+	.owner = THIS_MODULE,
+	.read = simplefs_read,
+};
+
+static struct dentry *simplefs_lookup(struct inode *parent_inode,
+				struct dentry *child_dentry, unsigned int flags)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return NULL;
+}
+
+
+static struct inode_operations simplefs_inode_ops = {
+	.lookup = simplefs_lookup,
+};
 
 static int simplefs_fill_super(struct super_block *sb, void *data, int silent)
 {
-	struct inode *inode;
+	struct inode *root_inode;
+	struct buffer_head *bh;
+	struct simplefs_super_block *sb_disk;
 
-	sb->s_magic = 0x12345678;
-	inode = simplefs_get_inode(sb, NULL, S_IFDIR, 0);
-	//创建根节点
-	sb->s_root = d_make_root(inode);
+	bh = (struct buffer_head *)sb_bread(sb, 0);	
+	sb_disk = (struct simplefs_super_block *)bh->b_data;
+
+	printk(KERN_INFO "The magic number obtained in disk is: [%d]\n",sb_disk->magic);
+	printk(KERN_INFO "version: %d\n", sb_disk->version);
+	printk(KERN_INFO "block size: %d\n", sb_disk->block_size);
+	printk(KERN_INFO "free block: %d\n", sb_disk->free_blocks);
+
+	sb->s_magic = SIMPLEFS_MAGIC;
+	sb->s_fs_info = sb_disk;
+
+	root_inode = new_inode(sb);
+	root_inode->i_ino = SIMPLEFS_ROOT_INODE_NUMBER;
+	inode_init_owner(root_inode, NULL, S_IFDIR);
+	root_inode->i_atime = root_inode->i_mtime = root_inode->i_ctime = current_kernel_time();
+	root_inode->i_op = &simplefs_inode_ops;
+	root_inode->i_fop = &simplefs_dir_operations;
+	root_inode->i_sb = sb;
+	root_inode->i_private = &(sb_disk->root_inode);
+	printk(KERN_INFO "i_ino:%lu mode:0x%x\n", root_inode->i_ino, root_inode->i_mode);
+
+	sb->s_root = d_make_root(root_inode);
 	if (!sb->s_root) {
 		printk("make fs root failed\n");
 		return -ENOMEM;
