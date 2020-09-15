@@ -1,11 +1,18 @@
 #ifndef _SIMPLE_FS_H_
 #define _SIMPLE_FS_H_
 
+#define SIMPLEFS_FILENAME_MAXLEN 255
+
 const uint64_t SIMPLEFS_MAGIC = 0x12345678;
 const int SIMPLEFS_DEFAULT_BLOCK_SIZE = 4 * 1024;
 const int SIMPLEFS_ROOTDIR_INODE_NUMBER = 1;
 const int SIMPLEFS_INODESTORE_BLOCK_NUMBER = 1;
+const int SIMPLEFS_ROOTDIR_DATABLOCK_NUMBER = 2;
 
+struct simplefs_dir {
+	char filename[SIMPLEFS_FILENAME_MAXLEN];
+	uint64_t inode_no;
+};
 
 struct simplefs_inode {
 	mode_t mode;
