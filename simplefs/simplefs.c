@@ -14,38 +14,24 @@
 
 #include "simplefs.h"
 
-struct inode *simplefs_get_inode(struct super_block *sb,
-			const struct inode *dir, umode_t mode, dev_t dev)
+static struct simplefs_inode *simplefs_get_inode(struct super_block *sb, uint64_t inode_no)
 {
-	struct inode *inode = new_inode(sb);
-	if (inode) {
-		inode->i_ino = get_next_ino();
-		inode_init_owner(inode, dir, mode);
-		inode->i_atime = inode->i_mtime = inode->i_ctime = current_kernel_time();
-		printk(KERN_INFO "i_ino:%lu mode:0x%x\n", inode->i_ino, inode->i_mode);
-		switch (inode->i_mode & S_IFMT) {
-		case S_IFLNK:
-			printk(KERN_INFO "S_IFLNK:0x%x\n", S_IFLNK);
-			break;
-		case S_IFDIR:
-			printk(KERN_INFO "S_IFDIR:0x%x\n", S_IFDIR);
-			inc_nlink(inode);
-			break;
-		case S_IFREG:
-			printk(KERN_INFO "S_IFREG:0x%x\n", S_IFREG);
-			break;
-		case S_IFBLK:
-		case S_IFCHR:
-		case S_IFSOCK:
-		case S_IFIFO:
-			printk(KERN_INFO "S_IFBLK S_IFCHR S_IFSOCK S_IFIFO\n");
-			break;
-		default:
-			printk(KERN_INFO "%s(): Bogus i_mode %o for ino %lu\n",
-				__func__, inode->i_mode, (unsigned long)inode->i_ino);
+	struct simplefs_super_block *sfs_sb = sb->s_fs_info;
+	struct simplefs_inode *sfs_inode = NULL;
+	int i;
+	struct buffer_head *bh;
+
+	bh = (struct buffer_head *)sb_bread(sb, SIMPLEFS_INODESTORE_BLOCK_NUMBER);
+	sfs_inode = (struct simplefs_inode *)bh->b_data;
+	
+	for (i=0; i<sfs_sb->inodes_count; i++) {
+		if (sfs_inode->inode_no == inode_no) {
+			return sfs_inode;
 		}
+		sfs_inode++;
 	}
-	return inode;
+
+	return NULL;
 }
 
 static ssize_t simplefs_read(struct file * filp, char __user * buf, size_t len, loff_t * ppos)
@@ -54,9 +40,17 @@ static ssize_t simplefs_read(struct file * filp, char __user * buf, size_t len, 
 	return 0;
 }
 
+static ssize_t simplefs_read_iter(struct kiocb *k, struct iov_iter *iter)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
+
+
 static const struct file_operations simplefs_dir_operations = {
 	.owner = THIS_MODULE,
 	.read = simplefs_read,
+	.read_iter = simplefs_read_iter,
 };
 
 static struct dentry *simplefs_lookup(struct inode *parent_inode,
@@ -80,22 +74,23 @@ static int simplefs_fill_super(struct super_block *sb, void *data, int silent)
 	bh = (struct buffer_head *)sb_bread(sb, 0);	
 	sb_disk = (struct simplefs_super_block *)bh->b_data;
 
-	printk(KERN_INFO "The magic number obtained in disk is: [%d]\n",sb_disk->magic);
-	printk(KERN_INFO "version: %d\n", sb_disk->version);
-	printk(KERN_INFO "block size: %d\n", sb_disk->block_size);
-	printk(KERN_INFO "free block: %d\n", sb_disk->free_blocks);
+	printk(KERN_INFO "The magic number obtained in disk is: [0x%llx]\n",sb_disk->magic);
+	printk(KERN_INFO "version: %llu\n", sb_disk->version);
+	printk(KERN_INFO "block size: %llu\n", sb_disk->block_size);
+	printk(KERN_INFO "free block: %llu\n", sb_disk->free_blocks);
 
 	sb->s_magic = SIMPLEFS_MAGIC;
 	sb->s_fs_info = sb_disk;
 
 	root_inode = new_inode(sb);
-	root_inode->i_ino = SIMPLEFS_ROOT_INODE_NUMBER;
+	root_inode->i_ino = SIMPLEFS_ROOTDIR_INODE_NUMBER;
 	inode_init_owner(root_inode, NULL, S_IFDIR);
-	root_inode->i_atime = root_inode->i_mtime = root_inode->i_ctime = current_kernel_time();
+	root_inode->i_sb = sb;
 	root_inode->i_op = &simplefs_inode_ops;
 	root_inode->i_fop = &simplefs_dir_operations;
-	root_inode->i_sb = sb;
-	root_inode->i_private = &(sb_disk->root_inode);
+	root_inode->i_atime = root_inode->i_mtime = root_inode->i_ctime = current_kernel_time();
+
+	root_inode->i_private = simplefs_get_inode(sb, SIMPLEFS_ROOTDIR_INODE_NUMBER);
 	printk(KERN_INFO "i_ino:%lu mode:0x%x\n", root_inode->i_ino, root_inode->i_mode);
 
 	sb->s_root = d_make_root(root_inode);

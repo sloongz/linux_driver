@@ -17,7 +17,9 @@ void usage()
 int main(int argc, char **argv)
 {
 	int fd;
-	ssize_t ret;
+	int ret;
+	int len, size;
+	char *addr = NULL;
 	struct simplefs_super_block sb;
 
 	if (argc != 2) {
@@ -35,11 +37,25 @@ int main(int argc, char **argv)
 	sb.version = 1;
 	sb.magic = SIMPLEFS_MAGIC;
 	sb.block_size = SIMPLEFS_DEFAULT_BLOCK_SIZE;
-	sb.free_blocks = 0;
+	sb.inodes_count = 1;
+	sb.free_blocks = ~0;
 
 	ret = write(fd, (char *)&sb, sizeof(sb));
 	if (ret != SIMPLEFS_DEFAULT_BLOCK_SIZE) {
-		printf("wirte failed\n");
+		printf("wirte failed, ret=%d\n", ret);
+		size = SIMPLEFS_DEFAULT_BLOCK_SIZE - ret;
+		addr = (char *)&sb + ret;
+		while (ret) {	
+			len = size;
+			ret = write(fd, addr, len);
+			printf("write ret=%d\n", ret);
+			if (ret == len) {
+				break;
+			} else {
+				len -= ret;
+				addr += ret;
+			}
+		}
 	}
 
 	close(fd);

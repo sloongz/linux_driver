@@ -1,9 +1,11 @@
 #ifndef _SIMPLE_FS_H_
 #define _SIMPLE_FS_H_
 
-const int SIMPLEFS_MAGIC = 0x12345678;
+const uint64_t SIMPLEFS_MAGIC = 0x12345678;
 const int SIMPLEFS_DEFAULT_BLOCK_SIZE = 4 * 1024;
-const int SIMPLEFS_ROOT_INODE_NUMBER = 1;
+const int SIMPLEFS_ROOTDIR_INODE_NUMBER = 1;
+const int SIMPLEFS_INODESTORE_BLOCK_NUMBER = 1;
+
 
 struct simplefs_inode {
 	mode_t mode;
@@ -17,14 +19,13 @@ struct simplefs_inode {
 };
 
 struct simplefs_super_block {
-	unsigned int version;
-	unsigned int magic;
-	unsigned int block_size;
-	unsigned int free_blocks;
+	uint64_t version;
+	uint64_t magic;
+	uint64_t block_size;
+	uint64_t free_blocks;
+	uint64_t inodes_count; 
 
-	struct simplefs_inode root_inode;
-
-    char padding[ (4 * 1024) - (4 * sizeof(unsigned int))];
+    char padding[(4*1024) - (5 * sizeof(uint64_t))];
 };
 
 
