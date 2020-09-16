@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 
 	write_root_inode(fd);
 
-	char welcome_file[] = "hello world";
+	char welcome_file[] = "hello world, this is a test file store in data block";
 	struct simplefs_inode welcome = {
 		.mode = S_IFREG,
 		.inode_no = WELCOMEFILE_INODE_NUMBER,

@@ -40,29 +40,143 @@ static ssize_t simplefs_read(struct file * filp, char __user * buf, size_t len, 
 	return 0;
 }
 
+ssize_t simplefs_write(struct file *filp, const char __user * buf, size_t len, loff_t *ppos)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
+
 static ssize_t simplefs_read_iter(struct kiocb *k, struct iov_iter *iter)
 {
 	printk(KERN_INFO "%s()\n", __func__);
 	return 0;
 }
 
+static ssize_t simplefs_write_iter(struct kiocb *k, struct iov_iter *iter)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
+
+static int simplefs_iterate(struct file *filp, struct dir_context *ctx)
+{
+	loff_t pos;
+	struct inode *inode;
+	struct buffer_head *bh;
+	struct super_block *sb;
+	struct simplefs_inode *sfs_inode;
+	struct simplefs_dir *dir;
+	int i;
+
+	printk(KERN_INFO "%s() start\n", __func__);
+
+	pos = ctx->pos;
+	inode = filp->f_path.dentry->d_inode; 
+	printk(KERN_INFO "%s, file inode:%lu\n", __func__, inode->i_ino);
+	sb = inode->i_sb;
+
+	sfs_inode = inode->i_private; //simplefs_inode
+	printk(KERN_INFO "%s, inode_no:%u, data_block_number:%u", __func__,
+				sfs_inode->inode_no, 
+				sfs_inode->data_block_number);
+
+	if (!S_ISDIR(sfs_inode->mode)) {
+		printk(KERN_ERR "not a dir\n");
+		return -ENOTDIR;
+	}
+
+	bh = sb_bread(sb, sfs_inode->data_block_number);
+	dir = (struct simplefs_dir *)bh->b_data;
+	printk(KERN_INFO "dir count;%u\n", sfs_inode->dir_children_count);
+	for (i=0; i<sfs_inode->dir_children_count; i++) {
+		//static inline bool dir_emit(struct dir_context *ctx, const char *name, 
+		//			int namelen, u64 ino, unsigned type)
+		// this function do fill dir
+		dir_emit(ctx, dir->filename, SIMPLEFS_FILENAME_MAXLEN, 
+					dir->inode_no, DT_UNKNOWN);
+		ctx->pos += sizeof(struct simplefs_dir);
+		dir++;
+		printk(KERN_INFO "filename:%s inode:%llu\n", dir->filename, dir->inode_no);
+	}
+
+	brelse(bh);
+
+	printk(KERN_INFO "%s() end\n", __func__);
+	return 0;
+}
 
 static const struct file_operations simplefs_dir_operations = {
 	.owner = THIS_MODULE,
+	//ssize_t (*read) (struct file *, char __user *, size_t, loff_t *);
 	.read = simplefs_read,
+	//ssize_t (*write) (struct file *, const char __user *, size_t, loff_t *);
+	.write = simplefs_write,
+	//ssize_t (*read_iter) (struct kiocb *, struct iov_iter *);
 	.read_iter = simplefs_read_iter,
+	//ssize_t (*write_iter) (struct kiocb *, struct iov_iter *);
+	.write_iter = simplefs_write_iter,
+	//int (*iterate) (struct file *, struct dir_context *);
+	.iterate = simplefs_iterate,
 };
 
 static struct dentry *simplefs_lookup(struct inode *parent_inode,
 				struct dentry *child_dentry, unsigned int flags)
 {
-	printk(KERN_INFO "%s()\n", __func__);
+	struct buffer_head *bh;
+	struct super_block *sb;
+	struct simplefs_inode *parent_i;
+	struct simplefs_dir *dir;
+
+	printk(KERN_INFO "%s() start\n", __func__);
+
+	printk(KERN_INFO "%s, parent_inode:%ld child inode:%ld\n", 
+				__func__, parent_inode->i_ino, child_dentry->d_inode->i_ino);
+	sb = parent_inode->i_sb;
+	parent_i = parent_inode->i_private;
+	bh = sb_bread(sb, parent_i->data_block_number);
+	dir = (struct simplefs_dir *)bh->b_data;
+	
+	brelse(bh);
+
+	printk(KERN_INFO "%s() end\n", __func__);
 	return NULL;
 }
 
+static int simplefs_create(struct inode *i, struct dentry *d, umode_t mode, bool b)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
+
+static int simplefs_mkdir(struct inode *i, struct dentry *d, umode_t mode)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
+
+static int simplefs_link(struct dentry *d0, struct inode *i, struct dentry *d1)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
+
+static int simplefs_unlink(struct inode *i, struct dentry *dirent)
+{
+	printk(KERN_INFO "%s()\n", __func__);
+	return 0;
+}
 
 static struct inode_operations simplefs_inode_ops = {
+	//struct dentry * (*lookup) (struct inode *,struct dentry *, unsigned int);
 	.lookup = simplefs_lookup,
+	//int (*create) (struct inode *,struct dentry *, umode_t, bool);
+	.create = simplefs_create, 
+	//int (*mkdir) (struct inode *,struct dentry *,umode_t);
+	.mkdir = simplefs_mkdir,
+	//int (*link) (struct dentry *,struct inode *,struct dentry *);
+	.link = simplefs_link,
+	//int (*unlink) (struct inode *,struct dentry *);
+	.unlink = simplefs_unlink,
 };
 
 static int simplefs_fill_super(struct super_block *sb, void *data, int silent)
