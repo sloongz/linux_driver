@@ -209,7 +209,7 @@ struct dentry *simplefs_lookup(struct inode *parent_inode,
 		dir++;
 	}
 	
-//	brelse(bh);
+	brelse(bh);
 
 	if (!inode) {
 		printk(KERN_INFO "this dir %s not file\n", child_dentry->d_name.name);
