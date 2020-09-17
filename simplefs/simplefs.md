@@ -110,3 +110,51 @@ sudo umount ./mount_point
  *
 */
 ```
+
+##### 实现ls命令
+ls 命令需要实现两个接口
+
+```
+1. VFS的filldir接口
+struct file_operations
+    int (*iterate) (struct file *, struct dir_context *);
+    //填dir对应的inode和name
+    
+2. inode 的lookup接口
+struct inode_operations
+    struct dentry * (*lookup) (struct inode *,struct dentry *, unsigned int);
+    //dentry add to queue 
+```
+
+测试
+```
+sean@ubuntu:~/linux_driver/simplefs/mount_point$ ls
+hello
+```
+查看log
+
+```
+[  555.546089] simplefs enter
+[  555.546106] successfully register simplefs
+[  559.662261] The magic number obtained in disk is: [0x12345678]
+[  559.662263] version: 1
+[  559.662264] block size: 4096
+[  559.662264] free block: 8
+[  559.662571] i_ino:1 mode:0x4000
+[  559.662575] successfully mount /dev/loop0
+[  567.726795] simplefs_iterate() start
+[  567.726797] file inode:1
+[  567.726798] inode_no:1, data_block_number:2
+[  567.726804] dir count;1
+[  567.726806] filename:hello inode:2
+[  567.726807] simplefs_iterate() end
+[  567.726814] simplefs_lookup() start
+[  567.726816] parent_inode:1, child file name:hello
+[  567.726817] dir->inode_no:2 dir->filename:hello
+[  567.726818] dir count:1
+[  567.726818] find file:hello
+[  567.726821] simplefs_lookup() end
+[  567.726826] simplefs_iterate() start
+[  567.726827] file inode:1
+[  676.488078] simplefs superblock is destroyed. Unmount succesful.
+```
