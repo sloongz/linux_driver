@@ -21,9 +21,11 @@
  *     inode_no = 1
  *     data_block_number = 2 
  *     dir_children_count = 1
+ *	   mode = S_IFDIR
  * welcome file inode
  *     inode_no = 2
  *	   data_block_number = 3
+ *     mode = S_IFREG
  * ============================================================
  *
  * 接下来是data block 
@@ -38,7 +40,6 @@
  *    文件内容
  *
 */
-
 
 const uint64_t WELCOMEFILE_DATABLOCK_NUMBER = 3;
 const uint64_t WELCOMEFILE_INODE_NUMBER = 2;
