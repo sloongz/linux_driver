@@ -111,11 +111,11 @@ sudo umount ./mount_point
 */
 ```
 
-##### 实现ls命令
+##### 3 实现ls命令
 ls 命令需要实现两个接口
 
 ```
-1. VFS的filldir接口
+1. VFS的readdir接口
 struct file_operations
     int (*iterate) (struct file *, struct dir_context *);
     //填dir对应的inode和name
