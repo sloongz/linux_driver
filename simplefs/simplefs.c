@@ -18,7 +18,6 @@
 
 static struct kmem_cache *sfs_inode_cachep;
 
-
 static struct simplefs_inode *simplefs_get_inode(struct super_block *sb, uint64_t inode_no)
 {
 	struct simplefs_super_block *sfs_sb = sb->s_fs_info;
@@ -45,8 +44,48 @@ static struct simplefs_inode *simplefs_get_inode(struct super_block *sb, uint64_
 
 static ssize_t simplefs_read(struct file * filp, char __user * buf, size_t len, loff_t * ppos)
 {
-	printk(KERN_INFO "%s()\n", __func__);
-	return 0;
+	struct super_block *sb;
+	struct inode *inode = NULL;
+	struct simplefs_inode *sfs_inode = NULL;
+	struct buffer_head *bh;
+	int nbytes;
+	char *buffer;
+	ssize_t ret;
+
+	printk(KERN_INFO "%s() start\n", __func__);
+
+	inode = filp->f_path.dentry->d_inode;
+	sfs_inode = inode->i_private;
+	sb = inode->i_sb;
+
+	printk(KERN_INFO "inode:%u blocknum:%u\n", 
+				sfs_inode->inode_no, sfs_inode->data_block_number);
+
+	if (*ppos >= sfs_inode->file_size) {
+		printk(KERN_ERR "Read request with offset beyond the filesize\n");
+		return 0;
+	}
+
+	bh = sb_bread(sb, sfs_inode->data_block_number);
+	buffer = (char *)bh->b_data;
+
+	nbytes = min((size_t) sfs_inode->file_size, len);
+	printk(KERN_INFO "len: %d info:%s\n", nbytes, buffer);
+
+	ret = copy_to_user(buf, buffer, nbytes);
+	if (ret < 0) {
+		printk(KERN_ERR "copy_to_user() fail\n");
+		brelse(bh);
+		return -EFAULT;
+	}
+
+	*ppos += nbytes; 
+	printk("copy %d bytes\n", nbytes);
+
+	brelse(bh);
+
+	printk(KERN_INFO "%s() end\n", __func__);
+	return nbytes;
 }
 
 ssize_t simplefs_write(struct file *filp, const char __user * buf, size_t len, loff_t *ppos)

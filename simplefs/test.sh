@@ -8,6 +8,8 @@ sudo chmod 777 mount_point
 cd mount_point
 ls
 dmesg
+chmod 777 hello
+sudo cat hello
 cd ../
 sudo umount ./mount_point
 dmesg
