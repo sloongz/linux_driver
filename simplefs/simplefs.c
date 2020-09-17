@@ -90,7 +90,43 @@ static ssize_t simplefs_read(struct file * filp, char __user * buf, size_t len, 
 
 ssize_t simplefs_write(struct file *filp, const char __user * buf, size_t len, loff_t *ppos)
 {
-	printk(KERN_INFO "%s()\n", __func__);
+	struct super_block *sb;
+	struct inode *inode = NULL;
+	struct simplefs_inode *sfs_inode = NULL;
+	struct buffer_head *bh;
+	int nbytes;
+	char *buffer;
+	ssize_t ret;
+
+	printk(KERN_INFO "%s() start\n", __func__);
+
+	inode = filp->f_path.dentry->d_inode;
+	sfs_inode = inode->i_private;
+	sb = inode->i_sb;
+
+	printk(KERN_INFO "inode:%u blocknum:%u\n", 
+				sfs_inode->inode_no, sfs_inode->data_block_number);
+
+	bh = sb_bread(sb, sfs_inode->data_block_number);
+	
+	buffer += *ppos;
+
+	ret = copy_from_user(buffer, buf, len);
+	if (ret < 0) {
+		printk(KERN_ERR "Error copying file contents from the userspace buffer to the kernel space\n");
+		brelse(bh);
+		return -EFAULT;
+	}
+	*ppos += len;
+
+	mark_buffer_dirty(bh); 
+	sync_dirty_buffer(bh); 
+
+	brelse(bh);
+
+	sfs_inode->file_size = *ppos;
+
+	printk(KERN_INFO "%s() end\n", __func__);
 	return 0;
 }
 
