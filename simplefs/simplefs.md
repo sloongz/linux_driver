@@ -158,3 +158,14 @@ hello
 [  567.726827] file inode:1
 [  676.488078] simplefs superblock is destroyed. Unmount succesful.
 ```
+
+##### 3 实现read命令
+实现struct file_operations中的read函数，
+把datablock中的数据通过 copy_to_user 传到用户空间。
+
+测试
+```
+sean@ubuntu:~/linux_driver/simplefs/mount_point$ sudo cat hello
+hello world, this is a test file store in data block
+```
+
