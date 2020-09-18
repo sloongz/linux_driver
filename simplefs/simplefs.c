@@ -42,6 +42,43 @@ static struct simplefs_inode *simplefs_get_inode(struct super_block *sb, uint64_
 	return inode_buffer;
 }
 
+static int simplefs_save_inode(struct super_block *sb, struct simplefs_inode *sfs_inode)
+{
+	struct simplefs_inode *changed_inode = NULL;
+	struct simplefs_inode *inodep = NULL;
+	struct simplefs_super_block *sfs_sb = NULL;
+	struct buffer_head *bh = NULL;
+	uint64_t i;
+	
+	printk(KERN_INFO "%s() start\n", __func__);
+
+	sfs_sb = sb->s_fs_info;
+	bh = sb_bread(sb, SIMPLEFS_INODESTORE_BLOCK_NUMBER);
+
+	//find inode in inode table
+	inodep = (struct simplefs_inode *)bh->b_data;
+	for (i=0; i<sfs_sb->inodes_count; i++) {
+		if (sfs_inode->inode_no == inodep->inode_no) {
+			changed_inode = inodep;	
+			break;
+		}
+		inodep++;
+	}
+	if (changed_inode) {
+		memcpy(changed_inode, sfs_inode, sizeof(struct simplefs_inode));
+		mark_buffer_dirty(bh);
+		sync_dirty_buffer(bh);
+	} else {
+		printk(KERN_ERR "not find inode in inode table\n");
+		return -EIO;
+	}
+ 
+	brelse(bh);
+	printk(KERN_INFO "%s() end\n", __func__);
+
+	return 0;
+}
+
 static ssize_t simplefs_read(struct file * filp, char __user * buf, size_t len, loff_t * ppos)
 {
 	struct super_block *sb;
@@ -94,7 +131,6 @@ ssize_t simplefs_write(struct file *filp, const char __user * buf, size_t len, l
 	struct inode *inode = NULL;
 	struct simplefs_inode *sfs_inode = NULL;
 	struct buffer_head *bh;
-	int nbytes;
 	char *buffer;
 	ssize_t ret;
 
@@ -106,8 +142,10 @@ ssize_t simplefs_write(struct file *filp, const char __user * buf, size_t len, l
 
 	printk(KERN_INFO "inode:%u blocknum:%u\n", 
 				sfs_inode->inode_no, sfs_inode->data_block_number);
+	printk(KERN_INFO "write len:%lu ppos:%lld\n", len, *ppos);
 
 	bh = sb_bread(sb, sfs_inode->data_block_number);
+	buffer = bh->b_data;
 	
 	buffer += *ppos;
 
@@ -125,9 +163,14 @@ ssize_t simplefs_write(struct file *filp, const char __user * buf, size_t len, l
 	brelse(bh);
 
 	sfs_inode->file_size = *ppos;
-
+	ret = simplefs_save_inode(sb, sfs_inode);
+	if (ret < 0) {
+		printk("save inode table error\n");
+		return ret;
+	}
+	
 	printk(KERN_INFO "%s() end\n", __func__);
-	return 0;
+	return len;
 }
 
 static ssize_t simplefs_read_iter(struct kiocb *k, struct iov_iter *iter)
