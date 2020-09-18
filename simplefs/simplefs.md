@@ -159,7 +159,7 @@ hello
 [  676.488078] simplefs superblock is destroyed. Unmount succesful.
 ```
 
-##### 3 实现read命令
+##### 3 实现read功能
 实现struct file_operations中的read函数，
 把datablock中的数据通过 copy_to_user 传到用户空间。
 
@@ -169,3 +169,18 @@ sean@ubuntu:~/linux_driver/simplefs/mount_point$ sudo cat hello
 hello world, this is a test file store in data block
 ```
 
+https://www.cnblogs.com/LittleHann/p/4305892.html
+
+##### 3 实现write功能
+
+实现struct file_operations中的write函数， 除了要修改对应文件的datablock外， 还需要修改inode table中inode对应文件的长度。
+
+测试
+
+```
+sean@ubuntu:~/linux_driver/simplefs/mount_point$ echo 1 > hello
+sean@ubuntu:~/linux_driver/simplefs/mount_point$ cat hello 
+1
+sean@ubuntu:~/linux_driver/simplefs/mount_point$ ls
+hello
+```
