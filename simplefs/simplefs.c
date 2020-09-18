@@ -16,7 +16,21 @@
 
 #include "simplefs.h"
 
+static DEFINE_MUTEX(simplefs_inodes_mgmt_lock);
+
 static struct kmem_cache *sfs_inode_cachep;
+
+static void simplefs_sb_sync(struct super_block *sb)
+{
+	struct buffer_head *bh;
+	struct simplefs_super_block *sfs_sb = sb->s_fs_info;
+
+	bh = sb_bread(sb, SIMPLEFS_SUPERBLOCK_BLOCK_NUMBER);
+	bh->b_data = (char *)sfs_sb;
+	mark_buffer_dirty(bh);
+	sync_dirty_buffer(bh);
+	brelse(bh);
+}
 
 static struct simplefs_inode *simplefs_get_inode(struct super_block *sb, uint64_t inode_no)
 {
@@ -162,12 +176,17 @@ ssize_t simplefs_write(struct file *filp, const char __user * buf, size_t len, l
 
 	brelse(bh);
 
+	if (mutex_lock_interruptible(&simplefs_inodes_mgmt_lock)) {
+		printk(KERN_ERR "mutex lock fail\n");
+		return -EINTR;
+	}
 	sfs_inode->file_size = *ppos;
 	ret = simplefs_save_inode(sb, sfs_inode);
 	if (ret < 0) {
 		printk("save inode table error\n");
 		return ret;
 	}
+	mutex_unlock(&simplefs_inodes_mgmt_lock);
 	
 	printk(KERN_INFO "%s() end\n", __func__);
 	return len;
@@ -256,7 +275,6 @@ static const struct file_operations simplefs_dir_operations = {
 	.iterate = simplefs_iterate,
 };
 
-
 static struct dentry *simplefs_lookup(struct inode *parent_inode,
 				struct dentry *child_dentry, unsigned int flags);
 static int simplefs_create(struct inode *i, struct dentry *d, umode_t mode, bool b);
@@ -337,10 +355,42 @@ struct dentry *simplefs_lookup(struct inode *parent_inode,
 	return NULL;
 }
 
-int simplefs_create(struct inode *i, struct dentry *d, umode_t mode, bool b)
+static int simplefs_create_fs_object(struct inode *dir, struct dentry *dentry, umode_t mode)
+{
+	struct super_block *sb;
+	struct simplefs_super_block *sfs_sb;
+	struct simplefs_inode *sfs_inode;
+	struct simplefs_inode *parent_dir_inode;
+	struct simplefs_dir *dir_data;
+	struct buffer_head *bh;
+
+	printk(KERN_INFO "%s() start\n", __func__);
+	printk(KERN_INFO "create file name: %s\n", dentry->d_name.name);
+	printk(KERN_INFO "paraent's dir inode number is %lu\n", dir->i_ino);
+
+	sb = dir->i_sb;
+	sfs_sb = sb->s_fs_info;
+
+	if (sfs_sb->inodes_count >= SIMPLEFS_MAX_FILESYSTEM_OBJECTS_SUPPORTED) {
+		printk(KERN_ERR "file reach the maximum number\n");	
+		return -ENOSPC;
+	}
+	if (!S_ISDIR(mode) && !S_ISREG(mode)) {
+		printk(KERN_ERR "create file not a file or directory\n");
+		return -EINVAL;	
+	}
+
+
+
+	printk(KERN_INFO "%s() end\n", __func__);
+	return 0;
+}
+
+int simplefs_create(struct inode *dir, struct dentry *dentry, umode_t mode, bool excl)
 {
 	printk(KERN_INFO "%s()\n", __func__);
-	return 0;
+
+	return simplefs_create_fs_object(dir, dentry, mode);
 }
 
 int simplefs_mkdir(struct inode *i, struct dentry *d, umode_t mode)

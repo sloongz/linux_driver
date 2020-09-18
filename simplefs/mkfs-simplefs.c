@@ -79,7 +79,7 @@ static int write_superblock(int fd)
 	sb.block_size = SIMPLEFS_DEFAULT_BLOCK_SIZE;
 	//1.root_dir 2.welcom file
 	sb.inodes_count = 2;
-	sb.free_blocks = ~0 & (1<<WELCOMEFILE_DATABLOCK_NUMBER);
+	sb.free_blocks = ~0 & ~(1<<WELCOMEFILE_DATABLOCK_NUMBER);
 
 	ret = data_write(fd, (char *)&sb, sizeof(sb));
 	if (!ret)
