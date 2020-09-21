@@ -32,6 +32,25 @@ static void simplefs_sb_sync(struct super_block *sb)
 	brelse(bh);
 }
 
+static void simplefs_inode_add(struct super_block *sb, struct simplefs_inode *inode)
+{
+	struct simplefs_super_block *sfs_sb = sb->s_fs_info;
+	struct buffer_head *bh;
+	struct simplefs_inode *inode_iterator;
+
+	bh = sb_bread(sb, SIMPLEFS_INODESTORE_BLOCK_NUMBER);
+
+	inode_iterator = (struct simplefs_inode *)bh->b_data;
+	inode_iterator += sfs_sb->inodes_count;
+	memcpy(inode_iterator, inode, sizeof(struct simplefs_inode));
+	sfs_sb->inodes_count++;
+
+	mark_buffer_dirty(bh);
+	simplefs_sb_sync(sb);
+
+	brelse(bh);
+}
+
 static struct simplefs_inode *simplefs_get_inode(struct super_block *sb, uint64_t inode_no)
 {
 	struct simplefs_super_block *sfs_sb = sb->s_fs_info;
@@ -358,6 +377,7 @@ struct dentry *simplefs_lookup(struct inode *parent_inode,
 static int simplefs_create_fs_object(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	struct super_block *sb;
+	struct inode *inode;
 	struct simplefs_super_block *sfs_sb;
 	struct simplefs_inode *sfs_inode;
 	struct simplefs_inode *parent_dir_inode;
@@ -380,7 +400,54 @@ static int simplefs_create_fs_object(struct inode *dir, struct dentry *dentry, u
 		return -EINVAL;	
 	}
 
+	inode = new_inode(sb);
+	if (!inode) {
+		printk(KERN_ERR "alloc inode failed\n");
+		return -ENOMEM;
+	}
+	inode->i_sb = sb;
+	inode->i_op = &simplefs_inode_ops;
+	inode->i_atime = inode->i_mtime = inode->i_ctime = current_kernel_time();
+	inode->i_ino = sfs_sb->inodes_count+3+10;
 
+	sfs_inode = kmem_cache_alloc(sfs_inode_cachep, GFP_KERNEL);
+	sfs_inode->inode_no = inode->i_ino;
+	sfs_inode->mode = mode;
+	inode->i_private = sfs_inode;
+
+	if (S_ISDIR(mode)) {
+		printk(KERN_INFO "create directory\n");
+		sfs_inode->dir_children_count = 0;			
+		inode->i_fop = &simplefs_dir_operations;
+	} else if (S_ISREG(mode)) {
+		printk(KERN_INFO "create file\n");	
+		sfs_inode->file_size = 0;
+		inode->i_fop = &simplefs_file_operations;
+	} else {
+		printk(KERN_ERR "what's mode???\n");
+	}
+
+	//modify
+	//sfs_sb->free_blocks
+
+	simplefs_inode_add(sb, sfs_inode);
+
+	parent_dir_inode = dir->i_private;	
+	bh = sb_bread(sb, parent_dir_inode->data_block_number);
+	dir_data = (struct simplefs_dir *)bh->b_data;
+	dir_data += parent_dir_inode->dir_children_count;
+	dir_data->inode_no = sfs_inode->inode_no;
+	strcpy(dir_data->filename, dentry->d_name.name);
+	
+	mark_buffer_dirty(bh);
+	sync_dirty_buffer(bh);
+	brelse(bh);
+
+	parent_dir_inode->dir_children_count++;
+	simplefs_save_inode(sb, parent_dir_inode);
+
+	inode_init_owner(inode, dir, mode);
+	d_add(dentry, inode);
 
 	printk(KERN_INFO "%s() end\n", __func__);
 	return 0;
@@ -393,10 +460,10 @@ int simplefs_create(struct inode *dir, struct dentry *dentry, umode_t mode, bool
 	return simplefs_create_fs_object(dir, dentry, mode);
 }
 
-int simplefs_mkdir(struct inode *i, struct dentry *d, umode_t mode)
+int simplefs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
 	printk(KERN_INFO "%s()\n", __func__);
-	return 0;
+	return simplefs_create_fs_object(dir, dentry, mode | S_IFDIR);
 }
 
 int simplefs_link(struct dentry *d0, struct inode *i, struct dentry *d1)
